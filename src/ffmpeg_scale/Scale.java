@@ -17,6 +17,7 @@ public class Scale {
 		
 		Scanner reader = new Scanner(System.in);
 		
+		// Get user input
 		System.out.print("Enter the Input file path : ");
 		input_filepath = reader.nextLine();
 		
@@ -33,6 +34,7 @@ public class Scale {
 	    
 	    long startTime = System.nanoTime();
 	    
+	    // Command to segment only the video stream and store audio stream separately
 	    command = "ffmpeg -v quiet "
 	    		+ "-i " + input_filepath
 	    		+ " -dn -sn -an -c:v copy "
@@ -44,6 +46,7 @@ public class Scale {
 	    
 	    Processes.run(new String[] {"cmd.exe","/c",command});
 	    
+	    // Get list of files from segment_list
 	    File obj = new File("list.ffconcat");
 	    List<String> file_list = new ArrayList<String>();
 	    reader = new Scanner(obj);
@@ -58,17 +61,23 @@ public class Scale {
 	    
 	    reader.close();
 	    
+	    // Get number of CPUs available
 	    int coreCount = Runtime.getRuntime().availableProcessors();
+	    
+	    // Create a fixed ThreadPool based on number of CPUs available
 	    ExecutorService service = Executors.newFixedThreadPool(coreCount);
 	    
+	    // Execute the thread for each segment
 	    for (int i = 0; i < file_list.size(); i++) {
 	    	service.execute(new Task(file_list.get(i),new_resolution));
 	    }
 	    
 	    service.shutdown();
 	    
+	    // Wait for all tasks to finish in the thread pool
 	    while(!service.isTerminated());
 	    
+	    // Command to join video segments and audio
 	    command = "ffmpeg -v quiet "
 	    		+ "-f concat -i list.ffconcat "
 	    		+ "-i audio.aac -c:a copy "
@@ -76,6 +85,7 @@ public class Scale {
 		    
 		Processes.run(new String[] {"cmd.exe","/c",command});
 		
+		// Perform cleanup
 		Processes.run(new String[] {"cmd.exe","/c","rm output_* *.ffconcat audio.aac"});
 	    
 		long elapsedTime = System.nanoTime() - startTime;
@@ -89,6 +99,7 @@ public class Scale {
 		
 		public Task(String filename, String resolution) {
 			
+			// Command to scale the video stream to <resolution>
 			command = "ffmpeg -v quiet "
 					+ "-i " + filename
 					+ " -vf scale=-2:" + resolution
