@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Scale {
 
 	public static void main(String[] args) throws IOException {
-		// TODO Auto-generated method stub
-		
+
 		String command, input_filepath, new_resolution, segment_length, output_filepath;
 		
 		Scanner reader = new Scanner(System.in);
@@ -30,6 +30,8 @@ public class Scale {
 	    output_filepath = reader.nextLine();
 	    
 	    reader.close();
+	    
+	    long startTime = System.nanoTime();
 	    
 	    command = "ffmpeg -v quiet "
 	    		+ "-i " + input_filepath
@@ -57,7 +59,7 @@ public class Scale {
 	    reader.close();
 	    
 	    int coreCount = Runtime.getRuntime().availableProcessors();
-	    ExecutorService service = Executors.newFixedThreadPool(coreCount + 1);
+	    ExecutorService service = Executors.newFixedThreadPool(coreCount);
 	    
 	    for (int i = 0; i < file_list.size(); i++) {
 	    	service.execute(new Task(file_list.get(i),new_resolution));
@@ -76,6 +78,9 @@ public class Scale {
 		
 		Processes.run(new String[] {"cmd.exe","/c","rm output_* *.ffconcat audio.aac"});
 	    
+		long elapsedTime = System.nanoTime() - startTime;
+		
+		System.out.print("Time : " + TimeUnit.NANOSECONDS.toSeconds(elapsedTime) + "s");
 	}
 	
 	static class Task implements Runnable {
