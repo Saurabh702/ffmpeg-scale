@@ -11,6 +11,16 @@ import java.util.concurrent.TimeUnit;
 
 public class Scale {
 
+	/* Help
+	 * ====
+	 * 
+	 * java Scale <input-file> <new-resolution> <segment-length> <output-file>
+	 * 		input-file     : file path for input video
+	 *  	new-resolution : a resolution for the output video which is divisible by 2
+	 *  	segment-length : duration of segment in seconds
+	 *  	output-file    : file path for output video
+	 */
+	
 	public static void main(String[] args) throws IOException {
 
 		String command, input_filepath, new_resolution, segment_length, output_filepath;
@@ -18,17 +28,17 @@ public class Scale {
 		Scanner reader = new Scanner(System.in);
 		
 		// Get user input
-		System.out.print("Enter the Input file path : ");
-		input_filepath = reader.nextLine();
+		//System.out.print("Enter the Input file path : ");
+		input_filepath = args[0];//reader.nextLine();
 		
-		System.out.print("Enter new resolution (144,240,360,480,720...) : ");
-		new_resolution = reader.nextLine();
+		//System.out.print("Enter new resolution (144,240,360,480,720...) : ");
+		new_resolution = args[1];//reader.nextLine();
 		
-		System.out.print("Enter segment length (15,30,60) : "); 
-		segment_length = reader.nextLine();
+		//System.out.print("Enter segment length (15,30,60) : "); 
+		segment_length = args[2];//reader.nextLine();
 		
-		System.out.print("Enter the Output file path : ");
-	    output_filepath = reader.nextLine();
+		//System.out.print("Enter the Output file path : ");
+	    output_filepath = args[3];//reader.nextLine();
 	    
 	    reader.close();
 	    
