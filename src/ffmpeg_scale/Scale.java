@@ -72,10 +72,15 @@ public class Scale {
 	    	service.execute(new Task(file_list.get(i),new_resolution));
 	    }
 	    
-	    service.shutdown();
-	    
-	    // Wait for all tasks to finish in the thread pool
-	    while(!service.isTerminated());
+		// Wait for all tasks to finish in the thread pool
+		service.shutdown();
+
+		try {
+			service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	    
 	    // Command to join video segments and audio
 	    command = "ffmpeg -v quiet "
