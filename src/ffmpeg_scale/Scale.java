@@ -56,7 +56,7 @@ public class Scale {
 		    		+ " output_%03d.mp4"
 		    		+ " -dn -sn -vn -c:a copy audio.aac";
 		    
-		    Processes.run(new String[] {"cmd.exe","/c",command});
+		    Processes.run(new String[] {"sh","-c",command});
 		    
 		    // Get list of files from segment_list
 		    File obj = new File("list.ffconcat");
@@ -100,10 +100,10 @@ public class Scale {
 		    		+ "-i audio.aac -c:a copy "
 		    		+ "-c:v copy " + output_filepath;
 			    
-			Processes.run(new String[] {"cmd.exe","/c",command});
+			Processes.run(new String[] {"sh","-c",command});
 			
 			// Perform cleanup
-			Processes.run(new String[] {"cmd.exe","/c","rm output_* *.ffconcat audio.aac"});
+			Processes.run(new String[] {"sh","-c","rm output_* *.ffconcat audio.aac"});
 		    
 			//long elapsedTime = System.nanoTime() - startTime;
 			
@@ -116,7 +116,7 @@ public class Scale {
 					+ " -vf scale=-2:" + new_resolution
 					+ " " + output_filepath;
 	    	
-	    	Processes.run(new String[] {"cmd.exe","/c",command});
+	    	Processes.run(new String[] {"sh","-c",command});
 	    }
 	}
 	
@@ -136,7 +136,7 @@ public class Scale {
 
 		public void run() {
 			try {
-				Processes.run(new String[] {"cmd.exe","/c",command});
+				Processes.run(new String[] {"sh","-c",command});
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
