@@ -14,18 +14,18 @@ public class Scale {
 	/* Help
 	 * ====
 	 * 
-	 * java Scale <input-file> <new-resolution> <segment-length> <output-file>
+	 * java Scale <input-file> <new-resolution>  <output-file> [<segment-length>]
 	 * 		input-file     : file path for input video
 	 *  	new-resolution : a resolution for the output video which is divisible by 2
-	 *  	segment-length : duration of segment in seconds
 	 *  	output-file    : file path for output video
+	 *  	segment-length : duration of segment in seconds (optional)
 	 */
 	
 	public static void main(String[] args) throws IOException {
 
 		String command, input_filepath, new_resolution, segment_length, output_filepath;
 		
-		Scanner reader = new Scanner(System.in);
+		//Scanner reader = new Scanner(System.in);
 		
 		// Get user input
 		//System.out.print("Enter the Input file path : ");
@@ -34,78 +34,90 @@ public class Scale {
 		//System.out.print("Enter new resolution (144,240,360,480,720...) : ");
 		new_resolution = args[1];//reader.nextLine();
 		
-		//System.out.print("Enter segment length (15,30,60) : "); 
-		segment_length = args[2];//reader.nextLine();
-		
 		//System.out.print("Enter the Output file path : ");
-	    output_filepath = args[3];//reader.nextLine();
-	    
-	    reader.close();
-	    
-	    long startTime = System.nanoTime();
-	    
-	    // Command to segment only the video stream and store audio stream separately
-	    command = "ffmpeg -v quiet "
-	    		+ "-i " + input_filepath
-	    		+ " -dn -sn -an -c:v copy "
-	    		+ "-bsf:v h264_mp4toannexb -copyts -start_at_zero "
-	    		+ "-f segment -segment_list list.ffconcat "
-	    		+ "-segment_time " + segment_length
-	    		+ " output_%03d.mp4"
-	    		+ " -dn -sn -vn -c:a copy audio.aac";
-	    
-	    Processes.run(new String[] {"cmd.exe","/c",command});
-	    
-	    // Get list of files from segment_list
-	    File obj = new File("list.ffconcat");
-	    List<String> file_list = new ArrayList<String>();
-	    reader = new Scanner(obj);
-	    
-	    while(reader.hasNextLine()) {
-	    	String data = reader.nextLine();
-	    	data = data.split(" ")[1];
-	    	if (data.endsWith("mp4")) {
-	    		file_list.add(data);
-	    	} 
-	    }
-	    
-	    reader.close();
-	    
-	    // Get number of CPUs available
-	    int coreCount = Runtime.getRuntime().availableProcessors();
-	    
-	    // Create a fixed ThreadPool based on number of CPUs available
-	    ExecutorService service = Executors.newFixedThreadPool(coreCount);
-	    
-	    // Execute the thread for each segment
-	    for (int i = 0; i < file_list.size(); i++) {
-	    	service.execute(new Task(file_list.get(i),new_resolution));
-	    }
-	    
-		// Wait for all tasks to finish in the thread pool
-		service.shutdown();
-
-		try {
-			service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	    
-	    // Command to join video segments and audio
-	    command = "ffmpeg -v quiet "
-	    		+ "-f concat -i list.ffconcat "
-	    		+ "-i audio.aac -c:a copy "
-	    		+ "-c:v copy " + output_filepath;
+	    output_filepath = args[2];//reader.nextLine();
+		
+	    if(args.length == 4) {
+	    	
+	    	//System.out.print("Enter segment length (15,30,60) : "); 
+	    	segment_length = args[3];//reader.nextLine();
+			
+		    //reader.close();
 		    
-		Processes.run(new String[] {"cmd.exe","/c",command});
-		
-		// Perform cleanup
-		Processes.run(new String[] {"cmd.exe","/c","rm output_* *.ffconcat audio.aac"});
-	    
-		long elapsedTime = System.nanoTime() - startTime;
-		
-		System.out.print("Time : " + TimeUnit.NANOSECONDS.toSeconds(elapsedTime) + "s");
+		    //long startTime = System.nanoTime();
+		    
+		    // Command to segment only the video stream and store audio stream separately
+		    command = "ffmpeg -v quiet "
+		    		+ "-i " + input_filepath
+		    		+ " -dn -sn -an -c:v copy "
+		    		+ "-bsf:v h264_mp4toannexb -copyts -start_at_zero "
+		    		+ "-f segment -segment_list list.ffconcat "
+		    		+ "-segment_time " + segment_length
+		    		+ " output_%03d.mp4"
+		    		+ " -dn -sn -vn -c:a copy audio.aac";
+		    
+		    Processes.run(new String[] {"cmd.exe","/c",command});
+		    
+		    // Get list of files from segment_list
+		    File obj = new File("list.ffconcat");
+		    List<String> file_list = new ArrayList<String>();
+		    Scanner reader = new Scanner(obj);
+		    
+		    while(reader.hasNextLine()) {
+		    	String data = reader.nextLine();
+		    	data = data.split(" ")[1];
+		    	if (data.endsWith("mp4")) {
+		    		file_list.add(data);
+		    	} 
+		    }
+		    
+		    reader.close();
+		    
+		    // Get number of CPUs available
+		    int coreCount = Runtime.getRuntime().availableProcessors();
+		    
+		    // Create a fixed ThreadPool based on number of CPUs available
+		    ExecutorService service = Executors.newFixedThreadPool(coreCount);
+		    
+		    // Execute the thread for each segment
+		    for (int i = 0; i < file_list.size(); i++) {
+		    	service.execute(new Task(file_list.get(i),new_resolution));
+		    }
+		    
+			// Wait for all tasks to finish in the thread pool
+			service.shutdown();
+	
+			try {
+				service.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		    
+		    // Command to join video segments and audio
+		    command = "ffmpeg -v quiet "
+		    		+ "-f concat -i list.ffconcat "
+		    		+ "-i audio.aac -c:a copy "
+		    		+ "-c:v copy " + output_filepath;
+			    
+			Processes.run(new String[] {"cmd.exe","/c",command});
+			
+			// Perform cleanup
+			Processes.run(new String[] {"cmd.exe","/c","rm output_* *.ffconcat audio.aac"});
+		    
+			//long elapsedTime = System.nanoTime() - startTime;
+			
+			//System.out.print("Time : " + TimeUnit.NANOSECONDS.toSeconds(elapsedTime) + "s");
+	    }
+	    else {
+	    	// Command to scale the video to <new-resolution> as a whole 
+	    	command = "ffmpeg -v quiet "
+					+ "-i " + input_filepath
+					+ " -vf scale=-2:" + new_resolution
+					+ " " + output_filepath;
+	    	
+	    	Processes.run(new String[] {"cmd.exe","/c",command});
+	    }
 	}
 	
 	static class Task implements Runnable {
