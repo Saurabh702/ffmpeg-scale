@@ -36,7 +36,7 @@ done; }  2>&1; }
 
 * Windows 10 Single Edition v1903
   * Terminal : git-bash
-  * java version :
+  * java version : 1.8.0_171
   * ffmpeg version : git-2020-03-03-60b1f85
   * GNU parallel version : 20200322
   * Time taken for benchmark : ~4348s
