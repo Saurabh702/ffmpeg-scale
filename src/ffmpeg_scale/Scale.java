@@ -14,7 +14,7 @@ public class Scale {
 	/* Help
 	 * ====
 	 * 
-	 * java Scale <input-file> <new-resolution>  <output-file> [<segment-length>]
+	 * java Scale <input-file> <new-resolution> <output-file> [<segment-length>]
 	 * 		input-file     : file path for input video
 	 *  	new-resolution : a resolution for the output video which is divisible by 2
 	 *  	output-file    : file path for output video
@@ -36,7 +36,7 @@ public class Scale {
 		
 		//System.out.print("Enter the Output file path : ");
 	    output_filepath = args[2];//reader.nextLine();
-		
+	    
 	    if(args.length == 4) {
 	    	
 	    	//System.out.print("Enter segment length (15,30,60) : "); 
@@ -46,6 +46,10 @@ public class Scale {
 		    
 		    //long startTime = System.nanoTime();
 		    
+	    	//Create temp directory
+	    	command = "mkdir temp";
+	    	Processes.run(new String[] {"sh","-c",command});
+	    	
 		    // Command to segment only the video stream and store audio stream separately
 		    command = "ffmpeg -v quiet "
 		    		+ "-i " + input_filepath
@@ -53,8 +57,8 @@ public class Scale {
 		    		+ "-bsf:v h264_mp4toannexb -copyts -start_at_zero "
 		    		+ "-f segment -segment_list list.ffconcat "
 		    		+ "-segment_time " + segment_length
-		    		+ " output_%03d.mp4"
-		    		+ " -dn -sn -vn -c:a copy audio.aac";
+		    		+ " temp/output_%03d.mp4"
+		    		+ " -dn -sn -vn -c:a copy temp/audio.aac";
 		    
 		    Processes.run(new String[] {"sh","-c",command});
 		    
@@ -67,7 +71,7 @@ public class Scale {
 		    	String data = reader.nextLine();
 		    	data = data.split(" ")[1];
 		    	if (data.endsWith("mp4")) {
-		    		file_list.add(data);
+		    		file_list.add("temp/"+data);
 		    	} 
 		    }
 		    
@@ -94,16 +98,22 @@ public class Scale {
 				e.printStackTrace();
 			}
 		    
+		    // Store the list of m3u8 files generated in list.txt in this format `file 'segment.m3u8'`
+		    command = "for f in temp/*.m3u8; do echo file \"'$f'\" >> list.txt; done";
+		    Processes.run(new String[] {"sh","-c",command});
+		    
 		    // Command to join video segments and audio
 		    command = "ffmpeg -v quiet "
-		    		+ "-f concat -i list.ffconcat "
-		    		+ "-i audio.aac -c:a copy "
-		    		+ "-c:v copy " + output_filepath;
+		    		+ "-f concat -i list.txt "
+		    		+ "-i temp/audio.aac -c copy "
+		    		+ "-hls_list_size 0 "
+		    		+ "-hls_time 10 "
+		    		+ output_filepath;
 			    
 			Processes.run(new String[] {"sh","-c",command});
 			
 			// Perform cleanup
-			Processes.run(new String[] {"sh","-c","rm output_* *.ffconcat audio.aac"});
+			Processes.run(new String[] {"sh","-c","rm -rf temp list.ffconcat list.txt"});
 		    
 			//long elapsedTime = System.nanoTime() - startTime;
 			
@@ -111,10 +121,13 @@ public class Scale {
 	    }
 	    else {
 	    	// Command to scale the video to <new-resolution> as a whole 
-	    	command = "ffmpeg -v quiet "
-					+ "-i " + input_filepath
+	    	command = "ffmpeg -v quiet"
+					+ " -i " + input_filepath
+					+ " -c:a copy"
 					+ " -vf scale=-2:" + new_resolution
-					+ " " + output_filepath;
+					+ " -hls_list_size 0"
+					+ " -hls_time 10 "
+					+ output_filepath;
 	    	
 	    	Processes.run(new String[] {"sh","-c",command});
 	    }
@@ -127,11 +140,11 @@ public class Scale {
 		public Task(String filename, String resolution) {
 			
 			// Command to scale the video stream to <resolution>
-			command = "ffmpeg -v quiet "
-					+ "-i " + filename
+			command = "ffmpeg -v quiet"
+					+ " -i " + filename
 					+ " -vf scale=-2:" + resolution
-					+ " temp_" + filename
-					+ " && mv temp_" + filename + " " + filename;
+					+ " -hls_list_size 0 " 
+					+ filename + ".m3u8";
 		}
 
 		public void run() {
